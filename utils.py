@@ -1,15 +1,19 @@
 import numpy as np
 from PIL import Image
+import glob
+import os
 
 
 def crop(img_array, box_height=128, box_width=128):
     img_height, img_width, img_channels = img_array.shape
+    if img_channels==4:
+        img_array = img_array[:,:,0:3]
 
     if img_height < box_height or img_width < box_width:
         raise Exception('Unable to crop.')
 
-    up = random.randint(0, img_height - box_height)
-    left = random.randint(0, img_width - box_width)
+    up = np.random.randint(0, img_height - box_height)
+    left = np.random.randint(0, img_width - box_width)
 
     return img_array[up:up + box_height, left:left + box_width]
 
@@ -46,6 +50,10 @@ def crop_images(jpg_dir):
     for path in paths:
         image = imread(path)
 
+        # we only handle colorful images
+        if image.shape[-1] != 3:
+            continue
+
         try:
             cropped_image = crop(image)
         except:
@@ -56,6 +64,8 @@ def crop_images(jpg_dir):
         if max_val == 0:
             print('{} has zero max value.'.format(path.split('/')[-1]))
             continue
+        
+
 
         res.append(cropped_image)
 
@@ -66,7 +76,7 @@ def add_poisson_noise_to_images(images):
     res = []
     for image in images:
 
-        noisy_image = add_poisson_noise(image, peak=random.uniform(1.0, 30.0))
+        noisy_image = add_poisson_noise(image, peak=np.random.uniform(1.0, 30.0))
 #         noisy_image = add_poisson_noise(image, peak=1.0)
         res.append(noisy_image)
     return np.stack(res)
@@ -90,6 +100,42 @@ def YCbCr2RGB(y, cb, cr):
     g = y - 0.344136 * (cb - 128.0) - 0.714136 * (cr - 128.0)
     b = y + 1.772 * (cb - 128.0)
     return r, g, b
+
+def psnr(x,y):
+    """
+    x: ground turth
+    y: noisy image
+    """
+    mse = np.array((x-y)**2).mean()
+    max_x = np.max(x)
+    psnr = 10 * np.log10(max_x**2 / mse)
+    # print('psnr: {}, mse: {}, max_x: {}'.format(psnr, mse, max_x))
+    return psnr
+
+def avg_psnr(x,y):
+    return np.mean([psnr(xx, yy) for xx, yy in zip(x, y)])
+    
+
+
+# def main():
+#     img = imread('59030337_p0.png')
+#     noisy = add_poisson_noise(img)
+#     print(psnr(img, noisy))
+
+#     img = img / 255.0
+#     noisy = noisy / 255.0
+#     print(psnr(img, noisy))
+
+#     # img = img -0.5
+#     # noisy = noisy - 0.5
+#     # print(psnr(img, noisy))
+
+#     x = [img, noisy]
+#     y = [noisy, img]
+#     print(avg_psnr(x,y))
+
+# if __name__ == '__main__':
+#     main()
 
 
 # def RGB2YCbCr(img_array, dtype=None):
