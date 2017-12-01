@@ -2,12 +2,11 @@ import tensorflow as tf
 import numpy as np
 import utils
 
-def denoisenet(x, n_layers=20, filters=64, batch_norm=False, training=False):
+def denoisenet(x, n_layers=20, filters=64):
     channels = int(x.get_shape()[-1])
 
     out = x
-    s = 'BN' if not batch_norm else ''
-    with tf.variable_scope('DenoiseNet'+s, reuse=tf.AUTO_REUSE):        
+    with tf.variable_scope('DenoiseNet', reuse=tf.AUTO_REUSE):        
         for i in range(n_layers):
 
             res_x = tf.layers.conv2d(x,
@@ -24,9 +23,6 @@ def denoisenet(x, n_layers=20, filters=64, batch_norm=False, training=False):
                                  padding='same',
                                  name='conv_{}'.format(i))
             
-            if batch_norm:
-                x = tf.layers.batch_normalization(x, training=training)
-
             if i < n_layers - 2:
                 x = tf.nn.relu(x)
 
@@ -42,23 +38,17 @@ def train(gt_scaled,
           filters,
           save_path,
           batch_norm=False):
-    # _, image_height, image_width, channels = gt_scaled.shape
-    shape = [batch_size] + list(gt_scaled.shape[1:])
+
+    shape = [None, None, None, gt_scaled.shape[-1]]
 
     # setup loss function and learning algo
     x = tf.placeholder(tf.float32, shape)
     y_true = tf.placeholder(tf.float32, shape)
 
-    y_train = denoisenet(x, layers, filters, batch_norm, training=True)
-    y_pred = denoisenet(x, layers, filters, batch_norm, training=False)
-
-    loss = tf.nn.l2_loss(y_train - y_true)
+    y_pred = denoisenet(x, layers, filters)
+    loss = tf.nn.l2_loss(y_pred - y_true)
 
     train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss)
-
-    n_samples = len(gt_scaled)
-
-    saver = tf.train.Saver()
 
     losses = []
     avg_psnr_list = []
@@ -67,7 +57,7 @@ def train(gt_scaled,
         sess.run(tf.global_variables_initializer())
 
         for epoch in range(epochs):
-            for start_index in range(0, n_samples - batch_size + 1, batch_size):
+            for start_index in range(0, len(gt_scaled) - batch_size + 1, batch_size):
                 batch_x = noise_scaled[start_index: start_index + batch_size]
                 batch_y = gt_scaled[start_index: start_index + batch_size]
 
@@ -86,6 +76,6 @@ def train(gt_scaled,
                 epoch, cur_loss, avg_psnr))
 
         if save_path:
-            saver.save(sess, save_path)
+            tf.train.Saver().save(sess, save_path)
 
     return losses, avg_psnr_list

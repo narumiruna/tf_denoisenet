@@ -3,7 +3,7 @@ import os
 import tarfile
 import wget
 
-def main():
+def download_pascal_voc_2012():
     data_dir = 'data'
     url = 'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar'
     path = '{}/{}'.format(data_dir, url.split('/')[-1])
@@ -22,4 +22,4 @@ def main():
         tar.extractall(data_dir)
 
 if __name__ == '__main__':
-    main()
+    download_pascal_voc_2012()

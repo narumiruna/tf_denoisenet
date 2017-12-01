@@ -7,12 +7,12 @@ from numpy.random import randint, uniform, poisson
 
 def crop(img_array, box_size):
     img_height, img_width, img_channels = img_array.shape
-    if img_channels==4:
-        img_array = img_array[:,:,0:3]
+    if img_channels == 4:
+        img_array = img_array[:, :, 0:3]
 
     if img_height < box_size or img_width < box_size:
         raise Exception('Unable to crop.')
-    
+
     up = randint(0, img_height - box_size)
     left = randint(0, img_width - box_size)
 
@@ -42,9 +42,13 @@ def add_poisson_noise(img, peak=1.0):
     return np.clip(noisy, 0.0, max_val)
 
 
-def crop_images(jpg_dir, box_size=128):
+def crop_images(jpg_dir, box_size=128, samples=None):
     res = []
     paths = glob.glob(os.path.join(jpg_dir, '*.jpg'))
+
+    if samples:
+        paths = paths[:samples]
+
     for path in paths:
         image = imread(path)
 
@@ -62,7 +66,7 @@ def crop_images(jpg_dir, box_size=128):
         if max_val == 0:
             print('{} has zero max value.'.format(path.split('/')[-1]))
             continue
-        
+
         res.append(cropped_image)
 
     return np.stack(res)
@@ -95,16 +99,18 @@ def YCbCr2RGB(y, cb, cr):
     b = y + 1.772 * (cb - 128.0)
     return r, g, b
 
-def psnr(x,y):
+
+def psnr(x, y):
     """
     x: ground turth
     y: noisy image
     """
-    mse = np.array((x-y)**2).mean()
+    mse = np.array((x - y)**2).mean()
     max_x = np.max(x)
     psnr = 10 * np.log10(max_x**2 / mse)
     # print('psnr: {}, mse: {}, max_x: {}'.format(psnr, mse, max_x))
     return psnr
 
-def avg_psnr(x,y):
+
+def avg_psnr(x, y):
     return np.mean([psnr(xx, yy) for xx, yy in zip(x, y)])
