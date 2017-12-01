@@ -14,29 +14,19 @@ def denoisenet(x, n_layers=20, conv_filters=63, residual_conv_filters=3):
                                      padding='same',
                                      name='{}_res_conv'.format(i),
                                      reuse=tf.AUTO_REUSE)
+
             out += res_x
+
+            if i < n_layers - 2:
+                activation = tf.nn.relu
+            else:
+                activation = None
 
             x = tf.layers.conv2d(x,
                                  filters=conv_filters,
                                  kernel_size=[3, 3],
                                  padding='same',
                                  name='{}_conv'.format(i),
-                                 reuse=tf.AUTO_REUSE)
-            if i < n_layers - 2:
-                x = tf.nn.relu(x)
+                                 reuse=tf.AUTO_REUSE, activation=activation)
 
     return out
-
-
-def main():
-    w = 128
-    h = 128
-    gt_img = tf.placeholder(dtype=tf.float32, shape=[
-                            None, h, w, 1], name='input')
-    noise_img = tf.placeholder(dtype=tf.float32, shape=[
-                               None, h, w, 1], name='input')
-    out_img = denoisenet(noise_img)
-
-
-if __name__ == '__main__':
-    main()

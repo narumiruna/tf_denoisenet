@@ -40,9 +40,9 @@ noise_scaled = noise / 255.0 - 0.5
 x = tf.placeholder(dtype=tf.float32, shape=[None, None, None, channels])
 y_true = tf.placeholder(dtype=tf.float32, shape=[None, None, None, channels])
 
-y = denoisenet(x, n_layers)
+y_pred = denoisenet(x, n_layers)
 
-loss = tf.nn.l2_loss(y - y_true)
+loss = tf.nn.l2_loss(y_pred - y_true)
 
 train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
@@ -65,18 +65,16 @@ with tf.Session() as sess:
                                    x: batch_x, y_true: batch_y})
             losses.append(cur_loss)
 
-        batch_pred = sess.run(y, feed_dict={x: batch_x})
+        batch_pred = sess.run(y_pred, feed_dict={x: batch_x})
         batch_pred = np.clip(batch_pred + 0.5, 0.0, 1.0)
         batch_y = batch_y + 0.5
 
         avg_psnr = utils.avg_psnr(batch_y, batch_pred)
         avg_psnr_list.append(avg_psnr)
-        
+
         print('Current loss: {}, average psnr: {}'.format(cur_loss, avg_psnr))
 
-
     saver.save(sess, 'model/denoisenet.ckpt')
-
 
 
 fig, ax = plt.subplots(ncols=2)
