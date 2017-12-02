@@ -1,8 +1,10 @@
-import tensorflow as tf 
-from model import train
 import argparse
-import utils
+
 import matplotlib.pyplot as plt
+import tensorflow as tf
+
+import utils
+from model import train
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', '-bs', type=int, default=64)
@@ -19,7 +21,7 @@ args = parser.parse_args()
 
 
 def main():
-    
+
     if not args.dir:
         from download import download_pascal_voc_2012
         download_pascal_voc_2012()
